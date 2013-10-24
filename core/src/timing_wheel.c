@@ -10,7 +10,7 @@ struct WheelItem
 	WheelItem_t next;
 	void *ud;
 	TimingWheel_callback callback;
-	int32_t    slot;
+	uint32_t    slot;
 	TimingWheel_t timing_wheel;
 	WheelItem_OnDestroy on_destroy;
 };
@@ -31,13 +31,13 @@ void *GetUserData(WheelItem_t w)
 
 WheelItem_t CreateWheelItem(void *ud,TimingWheel_callback callback,WheelItem_OnDestroy ondestroy)
 {
+	if(callback == NULL) return NULL;
 	WheelItem_t wit = malloc(sizeof(*wit));
-	if(!wit)
-		return 0;
+	if(!wit) return NULL;
 	wit->ud = ud;
 	wit->callback = callback;
-	wit->pre = wit->next = 0;
-	wit->slot = -1;
+	wit->pre = wit->next = NULL;
+	wit->timing_wheel = NULL;
 	wit->on_destroy = ondestroy;
 	return wit;
 }
@@ -47,7 +47,7 @@ void DestroyWheelItem(WheelItem_t *wit)
 	if((*wit)->on_destroy)
 		(*wit)->on_destroy(*wit);
 	free(*wit);
-	*wit = 0;
+	*wit = NULL;
 }
 
 TimingWheel_t CreateTimingWheel(uint32_t precision,uint32_t max)
@@ -56,7 +56,7 @@ TimingWheel_t CreateTimingWheel(uint32_t precision,uint32_t max)
 	uint32_t slot_size = max/precision;
 	TimingWheel_t t = malloc(sizeof(*t) + (slot_size*sizeof(WheelItem_t)));
 	if(!t)
-		return 0;
+		return NULL;
 	uint32_t i = 0;
 	for(; i < slot_size; ++i)
 		t->slot[i] = NULL;
@@ -82,7 +82,7 @@ void DestroyTimingWheel(TimingWheel_t *t)
       }
 	}
 	free(*t);
-	*t = 0;
+	*t = NULL;
 }
 
 inline static void Add(TimingWheel_t t,uint32_t slot,WheelItem_t item)
@@ -115,19 +115,17 @@ int  RegisterTimer(TimingWheel_t t,WheelItem_t item,uint32_t timeout)
 //激活slot中的所有事件
 static void Active(TimingWheel_t t,uint32_t slot,uint32_t now)
 {
-   WheelItem_t head = t->slot[slot];
-   t->slot[slot] = 0;
-   while(head)
-   {
-		WheelItem_t cur = head;		
-		head = head->next;
-		cur->slot = 0;
-		cur->pre = cur->next = 0;
-		cur->timing_wheel = NULL;
-		if(cur->callback)
-			cur->callback(t,cur->ud,now);
-		
-   }
+	
+	while(t->slot[slot])
+	{
+		WheelItem_t tmp = t->slot[slot];
+		t->slot[slot] = tmp->next;
+		if(tmp->next)
+			tmp->next->pre = NULL;
+		tmp->next = tmp->pre = NULL;
+		tmp->timing_wheel = NULL;
+		tmp->callback(t,tmp->ud,now);
+	}
 }
 
 int UpdateWheel(TimingWheel_t t,uint32_t now)
@@ -138,9 +136,7 @@ int UpdateWheel(TimingWheel_t t,uint32_t now)
 	interval = interval/t->precision;
 	uint32_t i = 0;
 	for( ; i < interval && i < t->slot_size; ++i)
-	{
 		Active(t,(t->current+i)%t->slot_size,now);
-	}
 	t->current = (t->current+i)%t->slot_size;
 	t->last_update = now;//+= (interval*t->precision);
 	
@@ -148,33 +144,23 @@ int UpdateWheel(TimingWheel_t t,uint32_t now)
 	return 0;
 }
 
-void UnRegisterTimer(/*TimingWheel_t t,*/WheelItem_t wit)
+void UnRegisterTimer(WheelItem_t wit)
 {
-	if(!wit)
-		return;
+	if(!wit) return;
 	TimingWheel_t t = wit->timing_wheel;
-	if(!t)
-		return;
-	if(wit->slot < 0 || wit->slot >= t->slot_size)
-		return;
-	WheelItem_t next = wit->next;
-	WheelItem_t pre = wit->pre;		
-	if(pre)
-	{
-		pre->next = next;
-		if(next)
-			next->pre = pre;
-	}
-	else
-	{
-		t->slot[wit->slot] = next;
-		if(next)
-			next->pre = NULL;
-		else
-			printf("empty\n");
-	}
+	if(!t) return;
+	uint32_t slot = wit->slot;
+	if(slot >= t->slot_size) return;
 	
+	if(t->slot[slot] == wit){
+		//head
+		t->slot[slot] = wit->next;
+		if(wit->next) wit->next->pre = NULL;
+	}else
+	{
+		if(wit->pre) wit->pre->next = wit->next;
+		if(wit->next) wit->next->pre = wit->pre;
+	}	
 	wit->pre = wit->next = NULL;
-	wit->slot = -1;
-	printf("UnRegisterTimer\n");
+	wit->timing_wheel = NULL;
 }
