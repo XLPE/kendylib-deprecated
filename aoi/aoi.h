@@ -45,22 +45,22 @@ struct bit_set
 
 static inline void set_bit(struct bit_set *bs,uint32_t index)
 {
-	uint32_t b_index = index / MAX_BITS;
-	index %= sizeof(uint32_t);
+	uint32_t b_index = index / (sizeof(uint32_t)*sizeof(uint8_t));
+	index %= (sizeof(uint32_t)*sizeof(uint8_t));
 	bs->bits[b_index] = bs->bits[b_index] | (1 << index);
 }
 
 static inline void clear_bit(struct bit_set *bs,uint32_t index)
 {
-	uint32_t b_index = index / MAX_BITS;
-	index %= sizeof(uint32_t);
+	uint32_t b_index = index / (sizeof(uint32_t)*sizeof(uint8_t));
+	index %= (sizeof(uint32_t)*sizeof(uint8_t));
 	bs->bits[b_index] = bs->bits[b_index] & (~(1 << index));
 }
 
 static inline uint8_t is_set(struct bit_set *bs,uint32_t index)
 {
-	uint32_t b_index = index / MAX_BITS;
-	index %= sizeof(uint32_t);
+	uint32_t b_index = index / (sizeof(uint32_t)*sizeof(uint8_t));
+	index %= (sizeof(uint32_t)*sizeof(uint8_t));
 	return bs->bits[b_index] & (1 << index)?1:0;
 }
 
