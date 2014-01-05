@@ -45,22 +45,22 @@ struct bit_set
 
 static inline void set_bit(struct bit_set *bs,uint32_t index)
 {
-	uint32_t b_index = index / (sizeof(uint32_t)*sizeof(uint8_t));
-	index %= (sizeof(uint32_t)*sizeof(uint8_t));
+	uint32_t b_index = index / (sizeof(uint32_t)*8);
+	index %= (sizeof(uint32_t)*8);
 	bs->bits[b_index] = bs->bits[b_index] | (1 << index);
 }
 
 static inline void clear_bit(struct bit_set *bs,uint32_t index)
 {
-	uint32_t b_index = index / (sizeof(uint32_t)*sizeof(uint8_t));
-	index %= (sizeof(uint32_t)*sizeof(uint8_t));
+	uint32_t b_index = index / (sizeof(uint32_t)*8);
+	index %= (sizeof(uint32_t)*8);
 	bs->bits[b_index] = bs->bits[b_index] & (~(1 << index));
 }
 
 static inline uint8_t is_set(struct bit_set *bs,uint32_t index)
 {
-	uint32_t b_index = index / (sizeof(uint32_t)*sizeof(uint8_t));
-	index %= (sizeof(uint32_t)*sizeof(uint8_t));
+	uint32_t b_index = index / (sizeof(uint32_t)*8);
+	index %= (sizeof(uint32_t)*8);
 	return bs->bits[b_index] & (1 << index)?1:0;
 }
 
@@ -74,27 +74,27 @@ struct map_block
 
 struct aoi_object
 {
-	struct double_link_node block_node;             //Í¬Ò»¸ömap_blockÄÚµÄ¶ÔÏóĞÎ³ÉÒ»¸öÁĞ±í 
+	struct double_link_node block_node;             //Í¬Ò»ï¿½ï¿½map_blockï¿½ÚµÄ¶ï¿½ï¿½ï¿½ï¿½Î³ï¿½Ò»ï¿½ï¿½ï¿½Ğ±ï¿½ 
 	struct double_link_node super_node;     
 	struct map_block *current_block;	
 	uint32_t aoi_object_id; 
-	struct bit_set self_view_objs;                  //×Ô¼º¹Û²ìµ½µÄ¶ÔÏó¼¯ºÏ
-	struct point2D current_pos;                     //µ±Ç°×ø±ê
-	uint32_t view_radius;                           //¿ÉÊÓ°ë¾¶
+	struct bit_set self_view_objs;                  //ï¿½Ô¼ï¿½ï¿½Û²ìµ½ï¿½Ä¶ï¿½ï¿½ó¼¯ºï¿½
+	struct point2D current_pos;                     //ï¿½ï¿½Ç°ï¿½ï¿½ï¿½
+	uint32_t view_radius;                           //ï¿½ï¿½ï¿½Ó°ë¾¶
 	uint32_t last_update_tick;
 	uint32_t watch_me_count;
 	uint8_t  is_leave_map;
 };
 
-#define BLOCK_LENGTH 500 //Ò»¸öµ¥Ôª¸ñµÄ´óĞ¡Îª5Ã×Õı·½ĞÎ
+#define BLOCK_LENGTH 500 //Ò»ï¿½ï¿½Ôªï¿½ï¿½Ä´ï¿½Ğ¡Îª5ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 #define UPDATE_INTERVAL 500
 
 typedef void (*callback_)(struct aoi_object *me,struct aoi_object *who);
 
 struct map
 {
-	struct point2D top_left;            //×óÉÏ½Ç
-	struct point2D bottom_right;        //ÓÒÏÂ½Ç
+	struct point2D top_left;            //ï¿½ï¿½ï¿½Ï½ï¿½
+	struct point2D bottom_right;        //ï¿½ï¿½ï¿½Â½ï¿½
 	struct double_link super_aoi_objs;  //super vision objects in the map,this type of object should be Scarce
 	uint32_t x_count;
 	uint32_t y_count;
@@ -104,7 +104,7 @@ struct map
 	struct map_block blocks[];
 };
 
-#define STAND_RADIUS 700//±ê×¼ÊÓ¾à,ÊÓ¾à´óÓÚSTAND_RADIUSµÄ¶ÔÏóÓµÓĞ³¬ÊÓ¾àĞèÒªÌØÊâ´¦Àí
+#define STAND_RADIUS 700//ï¿½ï¿½×¼ï¿½Ó¾ï¿½,ï¿½Ó¾ï¿½ï¿½ï¿½ï¿½STAND_RADIUSï¿½Ä¶ï¿½ï¿½ï¿½Óµï¿½Ğ³ï¿½ï¿½Ó¾ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½â´¦ï¿½ï¿½
 
 struct map *create_map(struct point2D *t_left,struct point2D *b_right,callback_ enter,callback_ leave);
 void move_to(struct map *m,struct aoi_object *o,struct point2D *new_pos);
